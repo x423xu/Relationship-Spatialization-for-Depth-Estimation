@@ -8,3 +8,12 @@
 - nyu.py
 
 ## for others
+
+# TODO
+1. data preparation
+    - kitti
+    - nyu
+    - kitti relation
+    - nyu relation
+2. training
+3. test

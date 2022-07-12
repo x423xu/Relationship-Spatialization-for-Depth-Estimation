@@ -42,7 +42,7 @@ class kitti(Dataset):
                 self.args.data_path,
                 remove_leading_slash(sample_path.split()[0]).replace(".png", ".h5"),
             )
-            
+
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
@@ -71,7 +71,7 @@ class kitti(Dataset):
                     has_valid_depth = True
                 except IOError:
                     depth_gt = False
-                    # print('Missing gt for {}'.format(image_path))
+                    print("Missing gt for {}".format(image_path))
 
                 if has_valid_depth:
                     depth_gt = np.asarray(depth_gt, dtype=np.float32)

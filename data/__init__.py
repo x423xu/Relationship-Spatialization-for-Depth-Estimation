@@ -76,3 +76,16 @@ class DepthDataLoader(object):
                 "mode should be one of 'train, test, online_eval'. Got {}".format(mode)
             )
 
+
+if __name__ == "__main__":
+    # test kitti
+    args = {}
+    args.dataset = "kitti"
+    args.distributed = False
+    args.batch_size = 2
+    args.num_threads = 1
+    args.world_size = 1
+    kitti_loader = DepthDataLoader(args, mode="train")
+    # test nyu
+    a = 1
+
