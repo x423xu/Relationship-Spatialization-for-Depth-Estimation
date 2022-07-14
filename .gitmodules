@@ -1,0 +1,3 @@
+[submodule "chamferdist"]
+	path = chamferdist
+	url = https://github.com/krrish94/chamferdist.git
