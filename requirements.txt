@@ -1,8 +1,9 @@
 yacs
-torch
+torch==1.9.0
+cudatoolkit==10.2
 numpy
 matplotlib
-torchvision
+torchvision==0.10.0
 h5py
 pickle-mixin
 pillow

@@ -15,6 +15,7 @@ requirements = ["torch", "torchvision"]
 
 
 def get_extensions():
+
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, "csrc")
 
@@ -24,11 +25,13 @@ def get_extensions():
 
     sources = main_file + source_cpu
     extension = CppExtension
-
+    print(CUDA_HOME)
     extra_compile_args = {"cxx": []}
     define_macros = []
 
-    if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv("FORCE_CUDA", "0") == "1":
+    if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv(
+        "FORCE_CUDA", "0"
+    ) == "1":
         extension = CUDAExtension
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]

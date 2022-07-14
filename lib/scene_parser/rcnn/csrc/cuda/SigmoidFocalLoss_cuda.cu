@@ -8,7 +8,7 @@
 #include <THC/THC.h>
 #include <THC/THCAtomics.cuh>
 #include <THC/THCDeviceUtils.cuh>
-
+// #include "common.hpp"
 #include <cfloat>
 
 // TODO make it in a common file

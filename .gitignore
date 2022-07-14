@@ -1,2 +1,8 @@
-__pycache__/
+__pycache__
+venv/
 structures.md
+build/
+checkpoints/
+pretrained/*
+*.egg-info
+_C.cpython-37m-x86_64*

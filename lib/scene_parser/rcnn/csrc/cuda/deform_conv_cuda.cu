@@ -6,7 +6,7 @@
 
 #include <THC/THC.h>
 #include <THC/THCDeviceUtils.cuh>
-
+// #include "common.hpp"
 #include <vector>
 #include <iostream>
 #include <cmath>
