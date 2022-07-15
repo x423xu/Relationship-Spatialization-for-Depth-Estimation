@@ -401,33 +401,21 @@ if __name__ == "__main__":
         "--wd", "--weight-decay", default=0.1, type=float, help="weight decay"
     )
     parser.add_argument(
-        "--w_chamfer",
-        "--w-chamfer",
-        default=0.05,
-        type=float,
-        help="weight value for chamfer loss",
+        "--w_chamfer", default=0.05, type=float, help="weight value for chamfer loss",
     )
     parser.add_argument(
-        "--div-factor",
-        "--div_factor",
-        default=25,
-        type=float,
-        help="Initial div factor for lr",
+        "--div-factor", default=25, type=float, help="Initial div factor for lr",
     )
     parser.add_argument(
-        "--final-div-factor",
-        "--final_div_factor",
-        default=100,
-        type=float,
-        help="final div factor for lr",
+        "--final-div-factor", default=100, type=float, help="final div factor for lr",
     )
 
-    parser.add_argument("--bs", default=16, type=int, help="batch size")
+    parser.add_argument("--bs", default=2, type=int, help="batch size")
     parser.add_argument("--print_every", default=100, type=int, help="print period")
     parser.add_argument(
         "--validate_every", default=1000, type=int, help="validation period"
     )
-    parser.add_argument("--gpu", default=None, type=int, help="Which gpu to use")
+    parser.add_argument("--gpu", default=0, type=int, help="Which gpu to use")
 
     parser.add_argument(
         "--norm",
@@ -462,13 +450,13 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--data_path",
-        default="../../data/NYUv2Whole/nyudepthv2/train",
+        default="../../HDD/dataset/NYUv2Whole/nyu2/sync",
         type=str,
         help="path to dataset",
     )
     parser.add_argument(
         "--gt_path",
-        default="../../data/kitti_depth/train",
+        default="../../HDD/dataset/NYUv2Whole/nyu2/sync",
         type=str,
         help="path to dataset",
     )
@@ -510,7 +498,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--data_path_eval",
-        default="../../data/NYUv2Whole/nyudepthv2/val",
+        default="../../HDD/dataset/NYUv2Whole/nyu2_test/",
         type=str,
         help="path to the data for online evaluation",
     )

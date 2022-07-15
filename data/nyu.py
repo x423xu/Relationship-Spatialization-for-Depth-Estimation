@@ -11,21 +11,21 @@ from lib.config import cfg
 
 
 class nyu(Dataset):
-    def __init__(self, args, mode, transform=None, is_for_online_eval=False, ext="png"):
+    def __init__(self, args, mode, transform=None, is_for_online_eval=False, ext="jpg"):
         self.args = args
         self.ext = ext
         if mode == "online_eval":
             cat_dir = os.listdir(args.data_path_eval)
             self.filenames = []
             for cd in cat_dir:
-                f = glob.glob(os.path.join(args.data_path_eval, cd, "*.h5"))
+                f = glob.glob(os.path.join(args.data_path_eval, cd, "*.{}").format(ext))
                 self.filenames.extend(f)
             self.filenames = self.filenames[: args.max_eval_num]
         if mode == "train":
             cat_dir = os.listdir(args.data_path)
             self.filenames = []
             for cd in cat_dir:
-                f = glob.glob(os.path.join(args.data_path, cd, "*.h5"))
+                f = glob.glob(os.path.join(args.data_path, cd, "*.{}".format(ext)))
                 self.filenames.extend(f)
         self.mode = mode
         self.transform = transform
@@ -37,8 +37,8 @@ class nyu(Dataset):
         sample_path = self.filenames[idx]
         focal = torch.tensor([518.8597])
         if self.mode == "train":
-            im_h5 = h5py.File(sample_path, "r")
-            image = im_h5["rgb"][:].transpose(1, 2, 0)
+            image_path = sample_path
+            image = Image.open(image_path)
             do_hist_equil = random.random()
             if do_hist_equil > 0.5:
                 img = np.array(image, dtype=np.uint8)
@@ -46,7 +46,7 @@ class nyu(Dataset):
                 img_yuv[:, :, 0] = cv2.equalizeHist(img_yuv[:, :, 0])
                 img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
                 image = Image.fromarray(img_output)
-            depth_gt = im_h5["depth"][:]
+            # depth_gt = im_h5["depth"][:]
             relation_path = sample_path.replace("train", "train_rel")
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)

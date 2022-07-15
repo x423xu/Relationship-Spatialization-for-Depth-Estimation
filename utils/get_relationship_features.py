@@ -60,7 +60,7 @@ rel_transforms = build_transforms(cfg, is_train=True, nyuv=True)
 print(args.dataset)
 if args.dataset == "nyu":
     train_data_path = args.data_path
-    train_rel_path = args.datapath
+    train_rel_path = args.data_path
     cat_dir = os.listdir(train_data_path)
     t1 = tqdm(cat_dir, total=len(cat_dir))
     for cd in t1:

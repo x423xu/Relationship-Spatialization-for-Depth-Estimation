@@ -42,7 +42,7 @@ class kitti(Dataset):
                 self.args.data_path,
                 remove_leading_slash(sample_path.split()[0]).replace(".png", ".h5"),
             )
-
+            image = Image.open(image_path)
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
