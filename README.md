@@ -71,3 +71,13 @@ Cool! Now all environments would be ready. The checklist:
 
 # Data preparation
 1. Download [Kitti](http://www.cvlibs.net/datasets/kitti/raw_data.php) and [NYUv2](https://drive.google.com/file/d/1AysroWpfISmm-yRFGBgFTrLy6FjQwvwP/view?usp=sharing) datasets (The NYUv2 is provided by [BTS](https://github.com/cleinc/bts/tree/master/pytorch)).
+2. prepare relationship features: 
+- Get into singularity and activate virtual environment
+- `python utils/get_relationship_features.py --dataset nyu --data_path xxxx`
+
+# Training
+
+1. Make directories to deposit pretrained models: 
+- `mkdir pretrained`->`cd pretrained`
+- download pretrained models [here]()
+- clone repository `git clone https://github.com/rwightman/gen-efficientnet-pytorch.git`

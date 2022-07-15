@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from relation_spatialization import RaMDE
+from .relation_spatialization import RaMDE
 
 from .miniViT import mViT
 from models.config import _C as cfg
-from ..utils import model_io
+from utils import model_io
 
 
 class UpSampleBN(nn.Module):
@@ -193,7 +193,12 @@ class Backbone(nn.Module):
         basemodel_name = "tf_efficientnet_b5_ap"
 
         print("Loading base model ()...".format(basemodel_name), end="")
-        basemodel = torch.hub.load("./pretrained", basemodel_name, pretrained=True)
+        basemodel = torch.hub.load(
+            "./pretrained/gen-efficientnet-pytorch",
+            basemodel_name,
+            pretrained=True,
+            source="local",
+        )
         print("Done.")
 
         # Remove last layer

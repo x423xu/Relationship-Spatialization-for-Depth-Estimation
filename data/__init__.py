@@ -1,10 +1,11 @@
 import torch
 import torch.utils.data.distributed
 from torch.utils.data import DataLoader
-from kitti import kitti
-from nyu import nyu
 
-from utils import preprocessing_transforms
+from .kitti import kitti
+from .nyu import nyu
+
+from .utils import preprocessing_transforms
 
 """
 DepthDataloader works for kitti and nyu depth v2. It constructs datasets from kitti or nyu, under train, online_eval or test mode.
@@ -14,7 +15,7 @@ DepthDataloader works for kitti and nyu depth v2. It constructs datasets from ki
 class DepthDataLoader(object):
     def __init__(self, args, mode):
         if args.dataset == "nyu":
-            ext = "h5py"
+            ext = "jpg"
             dataset = nyu
         if args.dataset == "kitti":
             ext = "png"

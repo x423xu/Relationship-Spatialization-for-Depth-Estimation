@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 import h5py, torch
 
-from utils import ToTensor, remove_leading_slash
+from .utils import ToTensor, remove_leading_slash, train_preprocess
 from lib.data.transforms import build_transforms
 from lib.config import cfg
 
@@ -43,11 +43,23 @@ class kitti(Dataset):
                 remove_leading_slash(sample_path.split()[0]).replace(".png", ".h5"),
             )
             image = Image.open(image_path)
+            depth_gt = Image.open(depth_path)
+            if self.args.do_kb_crop is True:
+                height = image.height
+                width = image.width
+                top_margin = int(height - 352)
+                left_margin = int((width - 1216) / 2)
+                depth_gt = depth_gt.crop(
+                    (left_margin, top_margin, left_margin + 1216, top_margin + 352)
+                )
+                image = image.crop(
+                    (left_margin, top_margin, left_margin + 1216, top_margin + 352)
+                )
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
             depth_gt = depth_gt / 256.0
-            image, depth_gt = self.train_preprocess(image, depth_gt)
+            image = train_preprocess(image, "kitti")
             sample = {"image": image, "depth": depth_gt, "focal": focal}
         else:
             if self.mode == "online_eval":

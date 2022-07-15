@@ -79,9 +79,11 @@ def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
     # Using pretrained models
     if args.dataset == "nyu":
-        pretrained_path = "./pretrained/AdaBins_nyu.pt"
+        pretrained_path = (
+            "./pretrained/RaMDE-nyu-baseline-Relation-Orthogonal-Attention.pt"
+        )
     elif args.dataset == "kitti":
-        pretrained_path = "./pretrained/AdaBins_kitti.pt"
+        pretrained_path = "./pretrained/RaMDE-kitti-baseline-Relation-Orthogonal-Attention.pt"
     else:
         pretrained_path = None
     model = models.RSMDE.build(
@@ -139,7 +141,7 @@ def main_worker(gpu, ngpus_per_node, args):
         lr=args.lr,
         device=args.gpu,
         root=args.root,
-        experiment_name=args.model_name,
+        experiment_name="RSMDE",
         optimizer_state_dict=None,
     )
 
@@ -148,7 +150,7 @@ def train(
     model,
     args,
     epochs=10,
-    experiment_name="RaMDE",
+    experiment_name="RSMDE",
     lr=0.0001,
     root=".",
     device=None,
@@ -228,6 +230,14 @@ def train(
                     continue
             bin_edges, pred = model(img, bbox, rel_features)
             mask = depth > args.min_depth
+
+            print(
+                pred.max().detach().cpu().numpy(),
+                pred.min().detach().cpu().numpy(),
+                depth[mask].max().detach().cpu().numpy(),
+                depth[mask].min().detach().cpu().numpy(),
+            )
+
             l_dense = criterion_ueff(
                 pred, depth, mask=mask.to(torch.bool), interpolate=True
             )
@@ -253,11 +263,11 @@ def train(
             scheduler.step()
 
             if i % args.print_every == 0:
-                logger.info(
-                    "[e:{}-{}/{}], loss {:.4f}".format(
-                        epoch, i, len(train_loader), loss.detach().cpu().numpy()
-                    )
+                log = "[e:{}-{}/{}], loss {:.4f}".format(
+                    epoch, i, len(train_loader), loss.detach().cpu().numpy()
                 )
+                print(log)
+                logger.info(log)
             if should_write and step % args.validate_every == 0:
                 train_loss.append(loss.detach().cpu().numpy())
                 model.eval()
@@ -265,11 +275,11 @@ def train(
                     args, model, test_loader, criterion_ueff, epoch, epochs, device
                 )
                 eval_loss.append(metrics["abs_rel"])
-                logger.info(
-                    "e: {}, step: {}, abs_rel: {:.4f}, rmse:{:.4f}".format(
-                        epoch, step, metrics["abs_rel"], metrics["rmse"]
-                    )
+                log = "e: {}, step: {}, abs_rel: {:.4f}, rmse:{:.4f}".format(
+                    epoch, step, metrics["abs_rel"], metrics["rmse"]
                 )
+                print(log)
+                logger.info(log)
                 if metrics["abs_rel"] < best_loss and should_write:
                     model_io.save_checkpoint(
                         model, optimizer, epoch, f"model_best.pt", root=log_path
@@ -285,21 +295,21 @@ def train(
                 ax.plot(train_loss, label="train_loss")
                 ax.legend()
                 fig.savefig(
-                    os.path.join(log_path, "./{}_loss.png".format(args.model_name))
+                    os.path.join(log_path, "./{}_loss.png".format(experiment_name))
                 )
                 fig, ax = plt.subplots(1, 1)
                 ax.plot(eval_loss, label="abs_rel")
                 ax.legend()
                 fig.savefig(
-                    os.path.join(log_path, "./{}_absrel.png".format(args.model_name))
+                    os.path.join(log_path, "./{}_absrel.png".format(experiment_name))
                 )
-                plt.close(fig)
+                plt.close("all")
                 np.save(
-                    os.path.join(log_path, "./{}_loss.npy".format(args.model_name)),
+                    os.path.join(log_path, "./{}_loss.npy".format(experiment_name)),
                     np.array(train_loss),
                 )
                 np.save(
-                    os.path.join(log_path, "./{}_absrel.npy".format(args.model_name)),
+                    os.path.join(log_path, "./{}_absrel.npy".format(experiment_name)),
                     np.array(eval_loss),
                 )
                 model.train()
@@ -431,7 +441,7 @@ if __name__ == "__main__":
         help="Use same LR for all param groups",
     )
     parser.add_argument(
-        "--distributed", default=True, action="store_true", help="Use DDP if set"
+        "--distributed", default=False, action="store_true", help="Use DDP if set"
     )
     parser.add_argument(
         "--root", default=".", type=str, help="Root folder to save data in"
@@ -450,13 +460,13 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--data_path",
-        default="../../HDD/dataset/NYUv2Whole/nyu2/sync",
+        default="../../HDD/dataset/NYUv2Whole/nyuv2/sync",
         type=str,
         help="path to dataset",
     )
     parser.add_argument(
         "--gt_path",
-        default="../../HDD/dataset/NYUv2Whole/nyu2/sync",
+        default="../../HDD/dataset/NYUv2Whole/nyuv2/sync",
         type=str,
         help="path to dataset",
     )
@@ -498,7 +508,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--data_path_eval",
-        default="../../HDD/dataset/NYUv2Whole/nyu2_test/",
+        default="../../HDD/dataset/NYUv2Whole/nyuv2_test/",
         type=str,
         help="path to the data for online evaluation",
     )

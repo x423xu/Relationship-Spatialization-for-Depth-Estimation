@@ -1,7 +1,38 @@
 import torch
+import random
 from torchvision import transforms
 import numpy as np
 from PIL import Image
+
+
+def augment_image(image, dataset):
+    # gamma augmentation
+    gamma = random.uniform(0.8, 1.2)
+    image_aug = image ** gamma
+
+    # brightness augmentation
+    if dataset == "nyu":
+        brightness = random.uniform(0.75, 1.25)
+    else:
+        brightness = random.uniform(0.9, 1.1)
+    image_aug = image_aug * brightness
+
+    # color augmentation
+    colors = np.random.uniform(0.9, 1.1, size=3)
+    white = np.ones((image.shape[0], image.shape[1]))
+    color_image = np.stack([white * colors[i] for i in range(3)], axis=2)
+    image_aug *= color_image
+    image_aug = np.clip(image_aug, 0, 1)
+
+    return image_aug
+
+
+def train_preprocess(image, dataset):
+    do_augment = random.random()
+    if do_augment > 0.5:
+        image = augment_image(image, dataset)
+
+    return image
 
 
 def _is_pil_image(img):

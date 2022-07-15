@@ -1,0 +1,12 @@
+15:59:53,454 __main__ INFO Training RSMDE
+15:59:53,454 __main__ INFO ./checkpoints/RSMDE_15-Jul_15-59-kitti-baseline-nodebs2-tep25-lr0.005-wd0.1-033c99bc-a96c-4d76-b3a4-88148fbe7621-Ortho-Atten-Relat
+16:00:01,588 __main__ INFO [e:0-0/11579], loss 0.8199
+16:00:03,542 __main__ INFO e: 0, step: 1, abs_rel: 0.0748, rmse:0.6779
+16:00:12,237 __main__ INFO [e:0-1/11579], loss 1.4903
+16:00:14,105 __main__ INFO e: 0, step: 2, abs_rel: 0.0854, rmse:0.7798
+16:00:22,560 __main__ INFO [e:0-2/11579], loss 4.8729
+16:00:24,408 __main__ INFO e: 0, step: 3, abs_rel: 0.0946, rmse:0.8747
+16:00:32,932 __main__ INFO [e:0-3/11579], loss 1.3079
+16:00:34,796 __main__ INFO e: 0, step: 4, abs_rel: 0.0650, rmse:0.6046
+16:00:44,546 __main__ INFO [e:0-4/11579], loss 129.5737
+16:00:46,415 __main__ INFO e: 0, step: 5, abs_rel: 0.0475, rmse:0.4665
