@@ -156,9 +156,9 @@ class RaMDE(nn.Module):
         )
         self.rel_attention = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
-            nn.Linear(input_channel, input_channel // 4),
+            nn.Conv2d(input_channel, input_channel // 4, 1, 1, 0),
             nn.ReLU(),
-            nn.Linear(input_channel // 4, input_channel),
+            nn.Conv2d(input_channel // 4, input_channel, 1, 1, 0),
             nn.Softmax(dim=1),
         )
         self.embedding = nn.Sequential(

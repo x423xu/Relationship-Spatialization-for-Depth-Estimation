@@ -92,3 +92,10 @@ kitti:
 nyu:
     python train.py --data_path /home/xxy/HDD/dataset/nyuv2_test/ --data_path_eval /home/xxy/HDD/dataset/nyuv2_test/ --dataset nyu --max_depth 10 --max_eval_num 10 --algo baseline --print_every 1 --validate_every 1
 ```
+
+# Test
+```
+1. python test.py nyu
+
+2. python test.py kitti
+```

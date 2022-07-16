@@ -1,4 +1,0 @@
-19:45:54,18 __main__ INFO Training RSMDE
-19:45:54,18 __main__ INFO ./checkpoints/RSMDE_15-Jul_19-45-kitti-baseline-nodebs2-tep25-lr0.005-wd0.1-adbc1d79-9033-48b1-b015-19676c3bcd10-Ortho-Atten-Relat
-19:47:52,136 __main__ INFO Training RSMDE
-19:47:52,137 __main__ INFO ./checkpoints/RSMDE_15-Jul_19-47-kitti-baseline-nodebs2-tep25-lr0.005-wd0.1-a2d29c06-5b47-477a-8a1d-0134559a36f9-Ortho-Atten-Relat

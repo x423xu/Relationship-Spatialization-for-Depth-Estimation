@@ -235,7 +235,13 @@ def train(
                 if not batch["has_valid_depth"]:
                     continue
             if args.do_kb_crop:
-                bin_edges, pred = model(img, bbox, rel_features, top_margin = top_margin, left_margin = left_margin)
+                bin_edges, pred = model(
+                    img,
+                    bbox,
+                    rel_features,
+                    top_margin=top_margin,
+                    left_margin=left_margin,
+                )
             else:
                 bin_edges, pred = model(img, bbox, rel_features)
             mask = depth > args.min_depth
@@ -380,7 +386,7 @@ def validate(args, model, test_loader, criterion_ueff, epoch, epochs, device="cp
                         ] = 1
                     else:
                         eval_mask[45:471, 41:601] = 1
-            valid_mask = np.logical_and(valid_mask, eval_mask)
+                valid_mask = np.logical_and(valid_mask, eval_mask)
             metrics.update(utils.compute_errors(gt_depth[valid_mask], pred[valid_mask]))
 
         return metrics.get_value(), val_si
