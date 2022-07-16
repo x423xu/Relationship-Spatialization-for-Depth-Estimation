@@ -49,7 +49,6 @@ class nyu(Dataset):
                 img_yuv[:, :, 0] = cv2.equalizeHist(img_yuv[:, :, 0])
                 img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
                 image = Image.fromarray(img_output)
-            # depth_gt = im_h5["depth"][:]
             relation_path = sample_path.replace(".jpg", ".h5")
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)

@@ -1,5 +1,6 @@
 __pycache__
 venv/
+log
 structures.md
 build/
 checkpoints/

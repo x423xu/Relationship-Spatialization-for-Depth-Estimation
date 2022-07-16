@@ -81,3 +81,14 @@ Cool! Now all environments would be ready. The checklist:
 - `mkdir pretrained`->`cd pretrained`
 - download pretrained models [here]()
 - clone repository `git clone https://github.com/rwightman/gen-efficientnet-pytorch.git`
+
+2. train:
+```
+singularity shell --nv -B /home/xxy/Documents/github/Relationship-Spatialization-for-Depth-Estimation -B ~/HDD/dataset ~/Documents/singularity-make/relation.sif
+source activate relation
+source venv/bin/activate
+kitti:
+    python train.py --data_path /home/xxy/HDD/dataset/kitti_data --filenames_file ./train_test_inputs/kitti_eigen_train_files_with_gt.txt --data_path_eval /home/xxy/HDD/dataset/kitti_data --filenames_file_eval ./train_test_inputs/kitti_eigen_test_files_with_gt.txt --gt_path /home/xxy/HDD/dataset/kitti_depth/--gt_path_eval /home/xxy/HDD/dataset/kitti_depth/ --dataset kitti --max_depth 80 --max_eval_num 10 --algo baseline --print_every 1 --validate_every 1 --do_kb_crop
+nyu:
+    python train.py --data_path /home/xxy/HDD/dataset/nyuv2_test/ --data_path_eval /home/xxy/HDD/dataset/nyuv2_test/ --dataset nyu --max_depth 10 --max_eval_num 10 --algo baseline --print_every 1 --validate_every 1
+```

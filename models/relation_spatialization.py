@@ -1,4 +1,5 @@
 from typing import ForwardRef
+from pyparsing import col
 import torch
 import torch.nn as nn
 from torch.nn.modules import conv  #
@@ -133,27 +134,31 @@ class TriGraph(nn.Module):
 class RaMDE(nn.Module):
     def __init__(
         self,
-        cfg,
         input_channel,
         ch=128,
         orthogonal_disable=True,
         attention_disable=True,
         algo="tri_graph",
+        do_kb_crop=False,
     ):
         super(RaMDE, self).__init__()
         assert algo in ["baseline", "tri_graph"]
         self.orthogonal_disable = orthogonal_disable
         self.attention_disable = attention_disable
         self.algo = algo
+        self.do_kb_crop = do_kb_crop
 
         self.channel_attention = nn.AdaptiveAvgPool2d(1)
         self.rel_embedding = nn.Sequential(
-            nn.Conv2d(input_channel, ch, 1, 1, 0),
+            nn.Conv2d(input_channel, input_channel, 1, 1, 0),
             nn.ReLU(),
-            nn.Conv2d(ch, ch, 1, 1, 0),
+            nn.Conv2d(input_channel, input_channel, 1, 1, 0),
         )
+        self.rel_attention = nn.AdaptiveAvgPool2d(1)
         self.embedding = nn.Sequential(
-            nn.Conv2d(ch * 2, ch, 3, 1, 1), nn.ReLU(), nn.Conv2d(ch, ch, 3, 1, 1)
+            nn.Conv2d(ch + input_channel, ch, 3, 1, 1),
+            nn.ReLU(),
+            nn.Conv2d(ch, ch, 3, 1, 1),
         )
         if self.algo == "tri_graph":
             self.tri_graph = TriGraph(ch=ch)
@@ -176,8 +181,8 @@ class RaMDE(nn.Module):
         return a
 
     def interpolate(
-        self, rel_features, bbox, size
-    ):  # (b,128,1024,1)->(b, 128, 240, 320),bbox(4,256,8)
+        self, rel_features, bbox, size, **kwargs
+    ):  # (b,128,1024,1)->(b, 128, 240, 320),bbox(b,256,8)
         out = torch.zeros(
             [rel_features.shape[0], rel_features.shape[1], size[0], size[1]],
             dtype=rel_features.dtype,
@@ -185,42 +190,68 @@ class RaMDE(nn.Module):
         )
         # print(rel_features.shape, out.shape, bbox.shape)
         interpolate_ = nn.functional.interpolate
-        # crop = F.crop
-        sub_box = bbox[:, :, :4].int() // 2
-        obj_box = bbox[:, :, 4:].int() // 2
+
+        if self.do_kb_crop:
+            sub_box = bbox[:, :, :4].int()
+            obj_box = bbox[:, :, 4:].int()
+            top_margin = kwargs["top_margin"].int() // 2
+            left_margin = kwargs["left_margin"].int() // 2
+            [w, h] = [608, 176]
+        else:
+            sub_box = bbox[:, :, :4].int() // 2
+            obj_box = bbox[:, :, 4:].int() // 2
+            top_margin = torch.zeros([rel_features.shape[0],])
+            left_margin = torch.zeros([rel_features.shape[0],])
+            [w, h] = [320, 240]
+        sub_box = sub_box.cpu().numpy()
+        obj_box = obj_box.cpu().numpy()
+        top_margin = top_margin.cpu().numpy()
+        left_margin = left_margin.cpu().numpy()
         for i in range(bbox.shape[0]):
+            tm = top_margin[i]
+            lm = left_margin[i]
             for j in range(bbox.shape[1]):
                 sx1, sy1, sx2, sy2 = sub_box[i, j, :]
+                if self.do_kb_crop:
+                    sx1 = np.maximum(sx1 - lm, 0)
+                    sy1 = np.maximum(sy1 - tm, 0)
+                    sx2 = np.minimum(sx2 - lm, w)
+                    sy2 = np.minimum(sy2 - tm, h)
                 sh, sw = sy2 - sy1, sx2 - sx1
                 if sh < 5 or sw < 5:
                     continue
                 sf = interpolate_(rel_features[i, :, :].unsqueeze(0), size=[sh, sw])
 
                 ox1, oy1, ox2, oy2 = obj_box[i, j, :]
+                if self.do_kb_crop:
+                    ox1 = np.maximum(ox1 - lm, 0)
+                    oy1 = np.maximum(oy1 - tm, 0)
+                    ox2 = np.minimum(ox2 - lm, w)
+                    oy2 = np.minimum(oy2 - tm, h)
                 oh, ow = oy2 - oy1, ox2 - ox1
                 if oh < 5 or ow < 5:
                     continue
                 of = interpolate_(rel_features[i, :, :].unsqueeze(0), size=[oh, ow])
-                # print(sy1, sy2)
                 out[i, :, sy1:sy2, sx1:sx2] += sf.squeeze()
                 out[i, :, oy1:oy2, ox1:ox2] += of.squeeze()
         return out
 
-    def forward(self, range_attention_maps, bbox, tuple_features):
+    def forward(self, range_attention_maps, bbox, tuple_features, **kwargs):
         tuple_features = tuple_features.unsqueeze(-1)
-        rel_features = self.rel_embedding(tuple_features)
+        rel_embeddings = self.rel_embedding(tuple_features)
+        rel_attention = self.rel_attention(rel_embeddings)
         # print(rel_features.shape)
         rel_features = self.interpolate(
-            rel_features,
+            tuple_features,
             bbox,
             size=[range_attention_maps.shape[2], range_attention_maps.shape[3]],
+            **kwargs
         )
-        # rel_features = nn.functional.interpolate(rel_features, size = [range_attention_maps.shape[2],\
-        #                 range_attention_maps.shape[3]])
+        rel_features *= rel_attention
+
         rel_features = rel_features.contiguous()
         image_features = range_attention_maps.contiguous()
 
-        # print(rel_features.shape, range_attention_maps.shape)
         if self.algo == "baseline":
             depth_features = torch.cat([image_features, rel_features], dim=1)
 

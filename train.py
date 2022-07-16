@@ -78,14 +78,16 @@ def log_images(img, depth, pred, args, step):
 def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
     # Using pretrained models
-    if args.dataset == "nyu":
-        pretrained_path = (
-            "./pretrained/RaMDE-nyu-baseline-Relation-Orthogonal-Attention.pt"
-        )
-    elif args.dataset == "kitti":
-        pretrained_path = "./pretrained/RaMDE-kitti-baseline-Relation-Orthogonal-Attention.pt"
-    else:
-        pretrained_path = None
+    # if args.dataset == "nyu":
+    #     pretrained_path = (
+    #         "./pretrained/RaMDE-nyu-baseline-Relation-Orthogonal-Attention.pt"
+    #     )
+    # elif args.dataset == "kitti":
+    #     pretrained_path = (
+    #         "./pretrained/RaMDE-kitti-baseline-Relation-Orthogonal-Attention.pt"
+    #     )
+    # else:
+    pretrained_path = None
     model = models.RSMDE.build(
         n_bins=args.n_bins,
         min_val=args.min_depth,
@@ -96,6 +98,7 @@ def main_worker(gpu, ngpus_per_node, args):
         no_relation=args.no_relation,
         pretrained=pretrained_path,
         algo=args.algo,
+        do_kb_crop=args.do_kb_crop,
     )
 
     if args.gpu is not None:  # If a gpu is set by user: NO PARALLELISM!!
@@ -225,10 +228,16 @@ def train(
             depth = batch["depth"].to(device)
             rel_features = batch["rel_features"].to(device)
             bbox = batch["bbox_pairs"].to(device)
+            if args.do_kb_crop:
+                top_margin = batch["top_margin"]
+                left_margin = batch["left_margin"]
             if "has_valid_depth" in batch:
                 if not batch["has_valid_depth"]:
                     continue
-            bin_edges, pred = model(img, bbox, rel_features)
+            if args.do_kb_crop:
+                bin_edges, pred = model(img, bbox, rel_features, top_margin = top_margin, left_margin = left_margin)
+            else:
+                bin_edges, pred = model(img, bbox, rel_features)
             mask = depth > args.min_depth
 
             print(

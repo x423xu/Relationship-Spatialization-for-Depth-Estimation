@@ -131,6 +131,7 @@ class Backbone(nn.Module):
         no_relation = kwargs["no_relation"]
         self.no_relation = no_relation
         algo = kwargs["algo"]
+        do_kb_crop = kwargs["do_kb_crop"]
         print(
             "attention disable {} -- orthogonal disable {}, -- no relation {}".format(
                 attention_disable, orthogonal_disable, no_relation
@@ -138,23 +139,21 @@ class Backbone(nn.Module):
         )
         if not no_relation:
             self.ramde = RaMDE(
-                cfg,
                 input_channel=256,
                 orthogonal_disable=orthogonal_disable,
                 attention_disable=attention_disable,
                 algo=algo,
+                do_kb_crop=do_kb_crop,
             )
 
     def forward(self, x, bbox, rel_features, **kwargs):
-        unet_out = self.decoder(self.encoder(x), **kwargs)
+        unet_out = self.decoder(self.encoder(x))
         bin_widths_normed, range_attention_maps = self.adaptive_bins_layer(unet_out)
         if not self.no_relation:
-            range_attention_maps = self.ramde(range_attention_maps, bbox, rel_features)
+            range_attention_maps = self.ramde(
+                range_attention_maps, bbox, rel_features, **kwargs
+            )
         out = self.conv_out(range_attention_maps)
-
-        # Post process
-        # n, c, h, w = out.shape
-        # hist = torch.sum(out.view(n, c, h * w), dim=2) / (h * w)  # not used for training
 
         bin_widths = (
             self.max_val - self.min_val
