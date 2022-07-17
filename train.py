@@ -349,7 +349,22 @@ def validate(args, model, test_loader, criterion_ueff, epoch, epochs, device="cp
                 if not batch["has_valid_depth"]:
                     continue
             depth = depth.squeeze().unsqueeze(0).unsqueeze(0)
-            _, pred = model(img, bbox, rel_features)
+            if args.do_kb_crop:
+                top_margin = batch["top_margin"]
+                left_margin = batch["left_margin"]
+            if "has_valid_depth" in batch:
+                if not batch["has_valid_depth"]:
+                    continue
+            if args.do_kb_crop:
+                _, pred = model(
+                    img,
+                    bbox,
+                    rel_features,
+                    top_margin=top_margin,
+                    left_margin=left_margin,
+                )
+            else:
+                _, pred = model(img, bbox, rel_features)
             mask = depth > args.min_depth
             l_dense = criterion_ueff(
                 pred, depth, mask=mask.to(torch.bool), interpolate=True
