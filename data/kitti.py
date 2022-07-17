@@ -71,20 +71,7 @@ class kitti(Dataset):
             )
             img_pil = Image.open(image_path)
             image = np.asarray(img_pil, dtype=np.float32) / 255.0
-            if self.args.do_kb_crop is True:
-                height = image.shape[0]
-                width = image.shape[1]
-                top_margin = int(height - 352)
-                left_margin = int((width - 1216) / 2)
-                image = image[
-                    top_margin : top_margin + 352, left_margin : left_margin + 1216, :
-                ]
-                if self.mode == "online_eval" and has_valid_depth:
-                    depth_gt = depth_gt[
-                        top_margin : top_margin + 352,
-                        left_margin : left_margin + 1216,
-                        :,
-                    ]
+
             if self.mode == "online_eval":
                 gt_path = self.args.gt_path_eval
                 depth_path = os.path.join(
@@ -106,6 +93,20 @@ class kitti(Dataset):
                     else:
                         raise "depth scaling only works for kitti"
 
+            if self.args.do_kb_crop is True:
+                height = image.shape[0]
+                width = image.shape[1]
+                top_margin = int(height - 352)
+                left_margin = int((width - 1216) / 2)
+                image = image[
+                    top_margin : top_margin + 352, left_margin : left_margin + 1216, :
+                ]
+                if self.mode == "online_eval" and has_valid_depth:
+                    depth_gt = depth_gt[
+                        top_margin : top_margin + 352,
+                        left_margin : left_margin + 1216,
+                        :,
+                    ]
             relation_path = os.path.join(
                 data_path,
                 remove_leading_slash(sample_path.split()[0]).replace(".png", ".h5"),
@@ -123,7 +124,7 @@ class kitti(Dataset):
                 sample = {"image": image, "focal": focal}
         if self.transform:
             sample = self.transform(sample)
-        if self.args.do_kb_crop is True:
+        if self.args.do_kb_crop:
             sample.update({"left_margin": left_margin, "top_margin": top_margin})
         rel_h5 = h5py.File(relation_path, "r")
         rel_features = torch.from_numpy(rel_h5["rel_features"][:])

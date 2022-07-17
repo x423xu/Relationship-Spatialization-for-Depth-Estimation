@@ -54,26 +54,26 @@ class TriGraph(nn.Module):
         self.max_iters = 2
         self.depth_message_collector = nn.ModuleList(
             [
-                nn.Conv2d(ch, ch * 2, 3, 1, 1),  # image->depth
-                nn.Conv2d(ch, ch * 2, 3, 1, 1),
-                nn.Conv2d(ch, ch * 2, 3, 1, 1),  # relation->depth
-                nn.Conv2d(ch, ch * 2, 3, 1, 1),
+                nn.Conv2d(ch, ch * 3, 3, 1, 1),  # image->depth
+                nn.Conv2d(ch, ch * 3, 3, 1, 1),
+                nn.Conv2d(ch * 2, ch * 3, 3, 1, 1),  # relation->depth
+                nn.Conv2d(ch * 2, ch * 3, 3, 1, 1),
             ]
         )
         self.image_message_collector = nn.ModuleList(
             [
-                nn.Conv2d(ch * 2, ch, 3, 1, 1),  # depth->image
+                nn.Conv2d(ch * 3, ch, 3, 1, 1),  # depth->image
+                nn.Conv2d(ch * 3, ch, 3, 1, 1),
+                nn.Conv2d(ch * 2, ch, 3, 1, 1),  # relation->image
                 nn.Conv2d(ch * 2, ch, 3, 1, 1),
-                nn.Conv2d(ch, ch, 3, 1, 1),  # relation->image
-                nn.Conv2d(ch, ch, 3, 1, 1),
             ]
         )
         self.relation_message_collector = nn.ModuleList(
             [
-                nn.Conv2d(ch * 2, ch, 3, 1, 1),  # depth->relation
-                nn.Conv2d(ch * 2, ch, 3, 1, 1),
-                nn.Conv2d(ch, ch, 3, 1, 1),  # image->relation
-                nn.Conv2d(ch, ch, 3, 1, 1),
+                nn.Conv2d(ch * 3, ch * 2, 3, 1, 1),  # depth->relation
+                nn.Conv2d(ch * 3, ch * 2, 3, 1, 1),
+                nn.Conv2d(ch, ch * 2, 3, 1, 1),  # image->relation
+                nn.Conv2d(ch, ch * 2, 3, 1, 1),
             ]
         )
         # self.updater1 = Updater()
@@ -148,9 +148,20 @@ class RaMDE(nn.Module):
         self.algo = algo
         self.do_kb_crop = do_kb_crop
 
-        self.channel_attention = nn.AdaptiveAvgPool2d(1)
+        self.channel_attention = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(input_channel, input_channel // 4, 1, 1, 0),
+            nn.ReLU(),
+            nn.Conv2d(input_channel // 4, input_channel, 1, 1, 0),
+            nn.Softmax(dim=1),
+        )
         self.rel_embedding = nn.Sequential(
             nn.Conv2d(input_channel, input_channel, 1, 1, 0),
+            nn.ReLU(),
+            nn.Conv2d(input_channel, input_channel, 1, 1, 0),
+        )
+        self.ortho_embedding = nn.Sequential(
+            nn.Conv2d(ch, input_channel, 1, 1, 0),
             nn.ReLU(),
             nn.Conv2d(input_channel, input_channel, 1, 1, 0),
         )
@@ -196,19 +207,18 @@ class RaMDE(nn.Module):
         )
         # print(rel_features.shape, out.shape, bbox.shape)
         interpolate_ = nn.functional.interpolate
-
+        [h, w] = size
         if self.do_kb_crop:
             sub_box = bbox[:, :, :4].int()
             obj_box = bbox[:, :, 4:].int()
             top_margin = kwargs["top_margin"].int() // 2
             left_margin = kwargs["left_margin"].int() // 2
-            [w, h] = [608, 176]
         else:
             sub_box = bbox[:, :, :4].int() // 2
             obj_box = bbox[:, :, 4:].int() // 2
             top_margin = torch.zeros([rel_features.shape[0],])
             left_margin = torch.zeros([rel_features.shape[0],])
-            [w, h] = [320, 240]
+
         sub_box = sub_box.cpu().numpy()
         obj_box = obj_box.cpu().numpy()
         top_margin = top_margin.cpu().numpy()
@@ -263,13 +273,14 @@ class RaMDE(nn.Module):
 
         if self.algo == "tri_graph":
             if not self.orthogonal_disable:
+                ortho_features = self.ortho_embedding(image_features)
                 rel_features = (
                     rel_features
                     - (
-                        (rel_features * image_features).sum()
-                        / (image_features ** 2).sum()
+                        (rel_features * ortho_features).sum()
+                        / (ortho_features ** 2).sum()
                     )
-                    * image_features
+                    * ortho_features
                 )
             if not self.attention_disable:
                 attention = self.channel_attention(rel_features)
