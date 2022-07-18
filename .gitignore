@@ -10,4 +10,4 @@ _C.cpython-37m-x86_64*
 *.sh
 results/
 core*
-*.egg-info
+*.egg-info/
