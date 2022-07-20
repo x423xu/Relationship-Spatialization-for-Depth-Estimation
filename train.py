@@ -267,7 +267,7 @@ def train(
             loss = (
                 l_dense
                 + args.w_chamfer * l_chamfer
-                + 0.01 * l_L1
+                # + 0.01 * l_L1
             )
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 0.1)  # optional
