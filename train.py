@@ -268,8 +268,6 @@ def train(
                 l_dense
                 + args.w_chamfer * l_chamfer
                 + 0.01 * l_L1
-                + 0.01 * torch.abs(pred.max() - depth[mask].max())
-                + 0.01 * torch.abs(pred.min() - depth[mask].min())
             )
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 0.1)  # optional
