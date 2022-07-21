@@ -22,6 +22,9 @@ from data import DepthDataLoader
 from loss import SILogLoss, BinsChamferLoss
 from utils import RunningAverage, colorize
 
+#-----------wandb configuration-----------#
+import wandb
+wandb.init(project="Relation", entity="xxy")
 # ---------------------------------------------------------#
 # config logging
 import logging
@@ -252,7 +255,8 @@ def train(
                 depth[mask].max().detach().cpu().numpy(),
                 depth[mask].min().detach().cpu().numpy(),
             )
-
+            if i%500 == 0:
+                wandb.log({"depth":wandb.Image(pred.squeeze().detach().cpu())})
             l_dense = criterion_ueff(
                 pred, depth, mask=mask.to(torch.bool), interpolate=True
             )
@@ -276,6 +280,9 @@ def train(
             scheduler.step()
 
             if i % args.print_every == 0:
+                wandb.log({"l_dense":l_dense,
+                           "chamfer_loss":l_chamfer,
+                           "total_loss":loss})
                 log = "[e:{}-{}/{}], loss {:.4f}".format(
                     epoch, i, len(train_loader), loss.detach().cpu().numpy()
                 )
@@ -287,6 +294,7 @@ def train(
                 metrics, val_si = validate(
                     args, model, test_loader, criterion_ueff, epoch, epochs, device
                 )
+                wandb.log({"eval:abs_rel":metrics["abs_rel"]})
                 eval_loss.append(metrics["abs_rel"])
                 log = "e: {}, step: {}, abs_rel: {:.4f}, rmse:{:.4f}".format(
                     epoch, step, metrics["abs_rel"], metrics["rmse"]
