@@ -79,7 +79,7 @@ Cool! Now all environments would be ready. The checklist:
 
 1. Make directories to deposit pretrained models: 
 - `mkdir pretrained`->`cd pretrained`
-- download pretrained models [here]()
+- download pretrained relationship detection models [here](https://drive.google.com/drive/folders/1V8ke-ZrHmObyXPseu3378GhvLEyahm1K?usp=sharing)
 - clone repository `git clone https://github.com/rwightman/gen-efficientnet-pytorch.git`
 
 2. train:
@@ -88,17 +88,13 @@ singularity shell --nv -B /home/xxy/Documents/github/Relationship-Spatialization
 source activate relation
 source venv/bin/activate
 kitti:
-    python train.py --data_path /home/xxy/HDD/dataset/kitti_data --filenames_file ./train_test_inputs/kitti_eigen_train_files_with_gt.txt --data_path_eval /home/xxy/HDD/dataset/kitti_data --filenames_file_eval ./train_test_inputs/kitti_eigen_test_files_with_gt.txt --gt_path /home/xxy/HDD/dataset/kitti_depth/ --gt_path_eval /home/xxy/HDD/dataset/kitti_depth/ --dataset kitti --max_depth 80 --max_eval_num 50 --algo baseline --print_every 100 --validate_every 100 --do_kb_crop
+    python train.py --data_path /scratch/xiaoyu/dataset/kitti_data --filenames_file ./train_test_inputs/kitti_eigen_train_files_with_gt.txt --data_path_eval /scratch/xiaoyu/dataset/kitti_data --filenames_file_eval ./train_test_inputs/kitti_eigen_test_files_with_gt.txt --gt_path /scratch/xiaoyu/dataset/kitti_depth/ --gt_path_eval /scratch/xiaoyu/dataset/kitti_depth/ --dataset kitti --max_depth 80 --max_depth_eval 80 --max_eval_num 50 --algo baseline --print_every 100 --validate_every 100 --do_kb_crop --bs 20 --distributed --workers 4 --lr 1e-4
 nyu:
-    python train.py --data_path /home/xxy/HDD/dataset/nyuv2/ --data_path_eval /home/xxy/HDD/dataset/nyuv2/ --dataset nyu --max_depth 10 --max_eval_num 50 --algo baseline --print_every 100 --validate_every 100
+    python train.py --data_path /scratch/xiaoyu/dataset/nyuv2/sync --data_path_eval /scratch/xiaoyu/dataset/nyuv2_test/ --dataset nyu --max_depth 10 --max_depth_eval 10 --max_eval_num 50 --algo baseline --print_every 100 --validate_every 100 --bs 20 --distributed --workers 4 --lr 1e-4
 ```
 
-python train.py --data_path /scratch/xiaoyu/dataset/kitti_data --filenames_file ./train_test_inputs/kitti_eigen_train_files_with_gt.txt --data_path_eval /scratch/xiaoyu/dataset/kitti_data --filenames_file_eval ./train_test_inputs/kitti_eigen_test_files_with_gt.txt --gt_path /scratch/xiaoyu/dataset/kitti_depth/ --gt_path_eval /scratch/xiaoyu/dataset/kitti_depth/ --dataset kitti --max_depth 80 --max_eval_num 10 --algo baseline --print_every 10 --validate_every 10 --do_kb_crop --bs 24 --distributed --workers 4
-
-python train.py --data_path /scratch/xiaoyu/dataset/nyuv2/sync --data_path_eval /scratch/xiaoyu/dataset/nyuv2_test/ --dataset nyu --max_depth 10 --max_eval_num 10 --algo tri_graph --print_every 10 --validate_every 10 --bs 16 --distributed --workers 4
-
 # Test
-1. specify pretrained model path; test data path
+1. specify pretrained model ([can be downloaded here](https://drive.google.com/drive/folders/1V8ke-ZrHmObyXPseu3378GhvLEyahm1K?usp=sharing)) path, test data path in `test.py`
 2. test:
 ```
 1. python test.py nyu

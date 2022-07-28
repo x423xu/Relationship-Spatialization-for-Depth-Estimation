@@ -163,7 +163,6 @@ if __name__ == "__main__":
         args.data_path_eval = "/scratch/xiaoyu/dataset/kitti_data"
         args.max_eval_num = -1
         args.pretrained = "/scratch/xiaoyu/Relationship-Spatialization-for-Depth-Estimation/checkpoints/RSMDE_27-Jul_12-07-kitti-baseline-nodebs20-tep25-lr0.0001-wd0.1-a5644bb3-ae85-43bd-8412-a50e98b477c6-Ortho-Atten-Relat/model_latest.pt"
-        # args.pretrained = "./pretrained/kitti.pt"
         # -------------------------------#
     else:
         raise "Wrong dataset"

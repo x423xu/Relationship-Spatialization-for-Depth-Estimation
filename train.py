@@ -256,10 +256,7 @@ def train(
                 depth[mask].max().detach().cpu().numpy(),
                 depth[mask].min().detach().cpu().numpy(),
             )
-            if args.rank==0:
-                if i%500 == 0:
-                    img_color = colorize(pred.squeeze().detach().cpu().numpy(), args.min_depth, args.max_depth)
-                    wandb.log({"depth":wandb.Image(img_color)},step = step)
+
             l_dense = criterion_ueff(
                 pred, depth, mask=mask.to(torch.bool), interpolate=True
             )
