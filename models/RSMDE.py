@@ -212,7 +212,7 @@ class Backbone(nn.Module):
         # Loading pretrained model
         path = kwargs["pretrained"]
         if path is not None:
-            print("\nLoading RaMDE model from " + path)
+            print("\nLoading RSMDE model from " + path)
             m, _, _ = model_io.load_checkpoint(path, m)
         print("build {} done.".format(cls.__name__))
         return m

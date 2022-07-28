@@ -88,10 +88,8 @@ class kitti(Dataset):
                 if has_valid_depth:
                     depth_gt = np.asarray(depth_gt, dtype=np.float32)
                     depth_gt = np.expand_dims(depth_gt, axis=2)
-                    if self.args.dataset == "kitti":
-                        depth_gt = depth_gt / 256.0
-                    else:
-                        raise "depth scaling only works for kitti"
+                    depth_gt = depth_gt / 256.0
+
 
             if self.args.do_kb_crop is True:
                 height = image.shape[0]

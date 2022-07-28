@@ -53,10 +53,7 @@ class nyu(Dataset):
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
-            if self.args.dataset == "nyu":
-                depth_gt = depth_gt / 1000.0
-            else:
-                depth_gt = depth_gt / 256.0
+            depth_gt = depth_gt / 1000.0
             image = train_preprocess(image, "nyu")
             sample = {"image": image, "depth": depth_gt, "focal": focal}
         else:
@@ -64,15 +61,14 @@ class nyu(Dataset):
             depth_path = image_path.replace("rgb", "sync_depth")
             depth_path = depth_path.replace(".jpg", ".png")
             image = Image.open(image_path)
+            image = np.asarray(image, dtype=np.float32) / 255.0
+            
             depth_gt = Image.open(depth_path)
-
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
             has_valid_depth = True
-            if self.args.dataset == "nyu":
-                depth_gt = depth_gt / 1000.0
-            else:
-                depth_gt = depth_gt / 256.0
+
+            depth_gt = depth_gt / 1000.0
             relation_path = sample_path.replace(".jpg", ".h5")
 
             sample = {

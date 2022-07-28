@@ -20,11 +20,11 @@ import models
 import utils
 from data import DepthDataLoader
 from loss import SILogLoss, BinsChamferLoss
-from utils import RunningAverage, colorize
+from utils import RunningAverage
 
 #-----------wandb configuration-----------#
 import wandb
-wandb.init(project="Relation", entity="xxy")
+os.environ["WANDB_MODE"]="offline"
 # ---------------------------------------------------------#
 # config logging
 import logging
@@ -44,7 +44,7 @@ formatter = logging.Formatter(
 )
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
-PROJECT = "RaMDE"
+
 
 # Some tool functions
 def is_rank_zero(args):
@@ -81,16 +81,13 @@ def log_images(img, depth, pred, args, step):
 def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
     # Using pretrained models
-    # if args.dataset == "nyu":
-    #     pretrained_path = (
-    #         "./pretrained/RaMDE-nyu-baseline-Relation-Orthogonal-Attention.pt"
-    #     )
-    # elif args.dataset == "kitti":
-    #     pretrained_path = (
-    #         "./pretrained/RaMDE-kitti-baseline-Relation-Orthogonal-Attention.pt"
-    #     )
-    # else:
-    pretrained_path = None
+    if args.dataset == "nyu":
+        pretrained_path = "./pretrained/nyu.pt"
+
+    elif args.dataset == "kitti":
+        pretrained_path = "./pretrained/kitti.pt"
+    else:
+        pretrained_path = None
     model = models.RSMDE.build(
         n_bins=args.n_bins,
         min_val=args.min_depth,
@@ -162,7 +159,6 @@ def train(
     device=None,
     optimizer_state_dict=None,
 ):
-    global PROJECT
     print(f"Training {experiment_name}")
     run_id = f"{dt.now().strftime('%d-%h_%H-%M')}-{args.dataset}-{args.algo}-nodebs{args.bs}-tep{epochs}-lr{lr}-wd{args.wd}-{uuid.uuid4()}"
     if not args.orthogonal_disable:
@@ -173,6 +169,10 @@ def train(
         run_id = f"{run_id}-Relat"
     name = f"{experiment_name}_{run_id}"
     log_path = os.path.join("./checkpoints", name)
+    if args.rank == 0:
+        wandb.init(project="Relation", entity="xxy")
+        wandb.run.name = name
+        wandb.save()
     print(log_path)
     if not os.path.exists(log_path):
         os.makedirs(log_path)
@@ -221,7 +221,8 @@ def train(
         model, optimizer, _ = model_io.load_checkpoint(
             os.path.join("./pretrained", resume_model_name), model, optimizer
         )
-
+    if args.rank == 0:
+        wandb.watch(model, log="gradients", log_freq=2, log_graph=True)
     print("start training")
     for epoch in range(args.epoch, epochs):
         for i, batch in enumerate(train_loader):
@@ -255,8 +256,10 @@ def train(
                 depth[mask].max().detach().cpu().numpy(),
                 depth[mask].min().detach().cpu().numpy(),
             )
-            if i%500 == 0:
-                wandb.log({"depth":wandb.Image(pred.squeeze().detach().cpu())})
+            if args.rank==0:
+                if i%500 == 0:
+                    img_color = colorize(pred.squeeze().detach().cpu().numpy(), args.min_depth, args.max_depth)
+                    wandb.log({"depth":wandb.Image(img_color)},step = step)
             l_dense = criterion_ueff(
                 pred, depth, mask=mask.to(torch.bool), interpolate=True
             )
@@ -274,15 +277,16 @@ def train(
                 # + 0.01 * l_L1
             )
             loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), 0.1)  # optional
+            # nn.utils.clip_grad_norm_(model.parameters(), 0.1)  # optional
             optimizer.step()
             step += 1
             scheduler.step()
 
             if i % args.print_every == 0:
-                wandb.log({"l_dense":l_dense,
-                           "chamfer_loss":l_chamfer,
-                           "total_loss":loss})
+                if args.rank==0:
+                    wandb.log({"l_dense":l_dense,
+                            "chamfer_loss":l_chamfer,
+                            "total_loss":loss}, step = step)
                 log = "[e:{}-{}/{}], loss {:.4f}".format(
                     epoch, i, len(train_loader), loss.detach().cpu().numpy()
                 )
@@ -294,7 +298,8 @@ def train(
                 metrics, val_si = validate(
                     args, model, test_loader, criterion_ueff, epoch, epochs, device
                 )
-                wandb.log({"eval:abs_rel":metrics["abs_rel"]})
+                if args.rank==0:
+                    wandb.log({"eval:abs_rel":metrics["abs_rel"]}, step = step)
                 eval_loss.append(metrics["abs_rel"])
                 log = "e: {}, step: {}, abs_rel: {:.4f}, rmse:{:.4f}".format(
                     epoch, step, metrics["abs_rel"], metrics["rmse"]
@@ -306,6 +311,7 @@ def train(
                         model, optimizer, epoch, f"model_best.pt", root=log_path
                     )
                     best_loss = metrics["abs_rel"]
+                    logger.info('log best model at {}'.format(best_loss))
                 model_io.save_checkpoint(
                     model, optimizer, epoch, f"model_latest.pt", root=log_path
                 )
@@ -447,7 +453,7 @@ if __name__ == "__main__":
         "--wd", "--weight-decay", default=0.1, type=float, help="weight decay"
     )
     parser.add_argument(
-        "--w_chamfer", default=0.05, type=float, help="weight value for chamfer loss",
+        "--w_chamfer", default=0.005, type=float, help="weight value for chamfer loss",
     )
     parser.add_argument(
         "--div-factor", default=25, type=float, help="Initial div factor for lr",

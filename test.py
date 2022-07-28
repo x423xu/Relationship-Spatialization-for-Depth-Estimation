@@ -9,10 +9,7 @@ from tqdm import tqdm
 class Test:
     def __init__(self, args):
         self.args = args
-        if args.dataset == "nyu":
-            pretrained_path = args.pretrained
-        elif args.dataset == "kitti":
-            pretrained_path = args.pretrained
+        pretrained_path = args.pretrained
         # model init
         model = train.models.RSMDE.build(
             n_bins=args.n_bins,
@@ -48,7 +45,22 @@ class Test:
                     if not batch["has_valid_depth"]:
                         continue
                 depth = depth.squeeze().unsqueeze(0).unsqueeze(0)
-                _, pred = self.model(img, bbox, rel_features)
+                if args.do_kb_crop:
+                    top_margin = batch["top_margin"]
+                    left_margin = batch["left_margin"]
+                if "has_valid_depth" in batch:
+                    if not batch["has_valid_depth"]:
+                        continue
+                if args.do_kb_crop:
+                    _, pred = self.model(
+                        img,
+                        bbox,
+                        rel_features,
+                        top_margin=top_margin,
+                        left_margin=left_margin,
+                    )
+                else:
+                    _, pred = self.model(img, bbox, rel_features)
                 pred = torch.nn.functional.interpolate(
                     pred, depth.shape[-2:], mode="bilinear", align_corners=True
                 )
@@ -83,12 +95,12 @@ class Test:
                             ] = 1
                         else:
                             eval_mask[45:471, 41:601] = 1
-                valid_mask = np.logical_and(valid_mask, eval_mask)
-                metrics.update(
-                    train.utils.compute_errors(gt_depth[valid_mask], pred[valid_mask])
-                )
+                    valid_mask = np.logical_and(valid_mask, eval_mask)
+                metric = train.utils.compute_errors(gt_depth[valid_mask], pred[valid_mask])
+                # print(metric)
+                metrics.update(metric)
         avg_metrics = metrics.get_value()
-        print(avg_metrics)
+        print("average: ",avg_metrics)
 
 
 if __name__ == "__main__":
@@ -110,17 +122,17 @@ if __name__ == "__main__":
         args.min_depth_eval = 1e-3
         args.max_depth_eval = 10
         args.gpu = 0
-        args.garg_crop = True
-        args.eigen_crop = False
+        args.garg_crop = False
+        args.eigen_crop = True
         args.num_threads = 1
         args.rank = 0
         args.world_size = 1
         args.batch_size = 1
         args.distributed = False
-        args.data_path = "/home/xxy/HDD/dataset/nyuv2_test/"
-        args.data_path_eval = "/home/xxy/HDD/dataset/nyuv2_test/"
+        args.data_path = "/scratch/xiaoyu/dataset/nyuv2_test/"
+        args.data_path_eval = "/scratch/xiaoyu/dataset/nyuv2_test/"
         args.max_eval_num = -1
-        args.pretrained = None
+        args.pretrained = '/scratch/xiaoyu/Relationship-Spatialization-for-Depth-Estimation/checkpoints/RSMDE_27-Jul_12-01-nyu-baseline-nodebs20-tep25-lr0.0001-wd0.1-be2fdb2e-a266-4641-b5e6-991cc241e211-Ortho-Atten-Relat/model_best.pt'
         # -------------------------------#
     elif sys.argv[1] == "kitti":
         # --------------kitti-----------------#
@@ -134,7 +146,7 @@ if __name__ == "__main__":
         args.attention_disable = False
         args.no_relation = False
         args.algo = "baseline"
-        args.do_kb_crop = False
+        args.do_kb_crop = True
         args.min_depth_eval = 1e-3
         args.max_depth_eval = 80
         args.gpu = 0
@@ -145,13 +157,13 @@ if __name__ == "__main__":
         args.world_size = 1
         args.batch_size = 1
         args.distributed = False
-        args.data_path = "/home/xxy/HDD/dataset/kitti_data"
-        # args.filenames_file = "./train_test_inputs/kitti_eigen_test_files_with_gt.txt"
+        args.data_path = "/scratch/xiaoyu/dataset/kitti_data"
         args.filenames_file_eval = "./train_test_inputs/kitti_eigen_test_files_with_gt.txt"
-        args.gt_path_eval = "/home/xxy/HDD/dataset/kitti_depth/"
-        args.data_path_eval = "/home/xxy/HDD/dataset/kitti_data"
+        args.gt_path_eval = "/scratch/xiaoyu/dataset/kitti_depth/"
+        args.data_path_eval = "/scratch/xiaoyu/dataset/kitti_data"
         args.max_eval_num = -1
-        args.pretrained = None
+        args.pretrained = "/scratch/xiaoyu/Relationship-Spatialization-for-Depth-Estimation/checkpoints/RSMDE_27-Jul_12-07-kitti-baseline-nodebs20-tep25-lr0.0001-wd0.1-a5644bb3-ae85-43bd-8412-a50e98b477c6-Ortho-Atten-Relat/model_latest.pt"
+        # args.pretrained = "./pretrained/kitti.pt"
         # -------------------------------#
     else:
         raise "Wrong dataset"
